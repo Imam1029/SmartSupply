@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% block title %}Staff Dashboard{% endblock %}
+{% block content %}
+<h1>Staff Panel — Today's Deliveries</h1>
+
+<div class="card" id="connectivity-card">
+  <h3>📍 GPS &amp; Offline Sync (Phase 2 demo)</h3>
+  <p>Status: <span id="conn-status" class="status-pill">checking…</span> | Queued offline events: <span id="queue-count">0</span></p>
+  <p style="font-size:0.8rem;color:var(--muted);">এই ব্রাউজার ট্যাব খোলা থাকলে প্রতি ৩০ সেকেন্ডে location পাঠানো হবে (Admin dashboard-এ দেখা যাবে)। ইন্টারনেট না থাকলে event local queue-তে জমা থাকবে, ফিরে এলে auto-sync হবে।</p>
+</div>
+
+<div class="card">
+  <h3>আজকের Cash Handover</h3>
+  <p>Expected: ৳{{ handover.expected_amount }} | Submitted: ৳{{ handover.submitted_amount }} | Status: <span class="status-pill {% if handover.status == 'PENDING' %}pending{% elif handover.status == 'MISMATCH' %}failed{% endif %}">{{ handover.get_status_display }}</span></p>
+  <a href="{% url 'delivery:cash_handover' %}" class="btn btn-sm btn-outline">Cash জমা দিন</a>
+</div>
+
+<h2>Assigned Orders</h2>
+{% for o in assigned_orders %}
+  <div class="card">
+    <p><strong>Order #{{ o.order_uid|slice:":8" }}</strong> — <span class="status-pill">{{ o.get_status_display }}</span></p>
+    <p>Customer: {{ o.customer.get_full_name|default:o.customer.phone }} ({{ o.customer.phone }})</p>
+    <p>Address: {{ o.delivery_address.display_lines|join:", " }}</p>
+    <p>ধরন: {{ o.get_order_type_display }} | Payment: {{ o.get_payment_method_display }} | মোট: ৳{{ o.total_amount }}</p>
+    <div class="action-row">
+      <a href="tel:{{ o.customer.phone }}" class="btn btn-sm btn-outline">📞 Call</a>
+      {% if o.delivery_address.latitude and o.delivery_address.longitude %}
+        <a href="https://www.google.com/maps/dir/?api=1&destination={{ o.delivery_address.latitude }},{{ o.delivery_address.longitude }}" target="_blank" class="btn btn-sm btn-outline">🧭 Get Direction</a>
+      {% endif %}
+      <a href="{% url 'delivery:order_action' o.pk %}" class="btn btn-sm">Order Manage করুন</a>
+    </div>
+  </div>
+{% empty %}
+  <p>আজকে আপনার কোনো assigned order নেই।</p>
+{% endfor %}
+
+<script>
+(function () {
+  const QUEUE_KEY = "smartwater_offline_queue";
+  const statusEl = document.getElementById("conn-status");
+  const queueCountEl = document.getElementById("queue-count");
+
+  function csrfToken() {
+    const m = document.cookie.match(/csrftoken=([^;]+)/);
+    return m ? m[1] : "";
+  }
+
+  function getQueue() {
+    try { return JSON.parse(localStorage.getItem(QUEUE_KEY) || "[]"); }
+    catch (e) { return []; }
+  }
+  function saveQueue(q) { localStorage.setItem(QUEUE_KEY, JSON.stringify(q)); }
+  function updateQueueBadge() { queueCountEl.textContent = getQueue().length; }
+
+  function updateStatus() {
+    const online = navigator.onLine;
+    statusEl.textContent = online ? "Online" : "Offline (queuing locally)";
+    statusEl.className = "status-pill" + (online ? "" : " pending");
+  }
+
+  function queueEvent(eventType, payload, relatedOrderId) {
+    const q = getQueue();
+    q.push({
+      local_event_id: "evt-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8),
+      event_type: eventType,
+      payload: payload || {},
+      related_order_id: relatedOrderId || null,
+      occurred_at: new Date().toISOString(),
+    });
+    saveQueue(q);
+    updateQueueBadge();
+  }
+
+  function flushQueue() {
+    const q = getQueue();
+    if (!q.length || !navigator.onLine) return;
+    fetch("{% url 'delivery:api_offline_sync' %}", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-CSRFToken": csrfToken() },
+      body: JSON.stringify({ events: q }),
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.ok) {
+          saveQueue([]);
+          updateQueueBadge();
+        }
+      })
+      .catch(() => {/* stay queued, retry next interval */});
+  }
+
+  function sendOrQueuePing(lat, lng) {
+    if (navigator.onLine) {
+      fetch("{% url 'delivery:api_gps_ping' %}", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-CSRFToken": csrfToken() },
+        body: JSON.stringify({ latitude: lat, longitude: lng }),
+      }).catch(() => queueEvent("GPS_PING_FALLBACK", { latitude: lat, longitude: lng }));
+    } else {
+      queueEvent("GPS_PING_FALLBACK", { latitude: lat, longitude: lng });
+    }
+  }
+
+  function pingOnce() {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      (pos) => sendOrQueuePing(pos.coords.latitude, pos.coords.longitude),
+      () => {/* location denied/unavailable -- silently skip this tick */},
+      { maximumAge: 15000, timeout: 8000 }
+    );
+  }
+
+  window.addEventListener("online", () => { updateStatus(); flushQueue(); });
+  window.addEventListener("offline", updateStatus);
+
+  updateStatus();
+  updateQueueBadge();
+  pingOnce();
+  setInterval(pingOnce, 30000);
+  setInterval(flushQueue, 30000);
+})();
+</script>
+{% endblock %}
+

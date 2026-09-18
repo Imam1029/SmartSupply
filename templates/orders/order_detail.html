@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}অর্ডার বিস্তারিত{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>অর্ডার #{{ order.order_uid|slice:":8" }}</h1>
+
+  {% if is_terminal_exception %}
+    <p>Status: <span class="status-pill failed">{{ order.get_status_display }}</span></p>
+  {% else %}
+    <div class="timeline">
+      {% for step in timeline %}
+        <div class="timeline-step {% if step.done %}done{% endif %}">
+          <div class="timeline-dot">{% if step.done %}✓{% endif %}</div>
+          <div class="timeline-label">{{ step.label }}</div>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <p>ধরন: {{ order.get_order_type_display }}</p>
+  <p>Payment: {{ order.get_payment_method_display }}
+    {% if order.payment %} — <span class="status-pill {% if order.payment.status == 'COD_PENDING' or order.payment.status == 'PENDING' or order.payment.status == 'INITIATED' %}pending{% elif order.payment.status == 'FAILED' %}failed{% endif %}">{{ order.payment.get_status_display }}</span>
+      {% if order.payment.status == 'INITIATED' %}
+        <a href="{% url 'payments:gateway_demo' order.payment.pk %}" class="btn btn-sm btn-outline">পেমেন্ট সম্পন্ন করুন</a>
+      {% elif order.payment.status == 'FAILED' %}
+        <a href="{% url 'payments:gateway_demo' order.payment.pk %}" class="btn btn-sm btn-outline">আবার চেষ্টা করুন</a>
+      {% endif %}
+    {% endif %}
+  </p>
+  <p>Delivery Address: {{ order.delivery_address.display_lines|join:", " }}</p>
+
+  <div class="table-scroll">
+  <table>
+    <tr><th>Product</th><th>Qty</th><th>Water</th><th>Bottle</th></tr>
+    {% for item in order.items.all %}
+      <tr><td>{{ item.product.name }}</td><td>{{ item.quantity }}</td><td>৳{{ item.unit_water_price }}</td><td>৳{{ item.unit_bottle_price }}</td></tr>
+    {% endfor %}
+  </table>
+  </div>
+
+  <p>Delivery Charge: ৳{{ order.delivery_charge }}</p>
+  {% if order.is_express %}<p>Express Fee: ৳{{ order.express_fee }}</p>{% endif %}
+  {% if order.promo_code %}<p>Promo Code ({{ order.promo_code.code }}): -৳{{ order.discount_amount }}</p>{% endif %}
+  <h3>মোট: ৳{{ order.total_amount }}</h3>
+
+  <a href="{% url 'orders:order_receipt' order.pk %}" target="_blank" class="btn btn-outline btn-sm">🧾 রসিদ দেখুন / প্রিন্ট করুন</a>
+  {% if order.status == 'ASSIGNED' or order.status == 'OUT_FOR_DELIVERY' %}
+    <a href="{% url 'orders:order_track' order.pk %}" class="btn btn-sm">🚚 Live Track করুন</a>
+  {% endif %}
+
+  {% if not hide_customer_actions %}
+  {% if order.status != 'CANCELLED' %}
+    <form method="post" action="{% url 'orders:order_reorder' order.pk %}" style="display:inline;" data-confirm="এই একই অর্ডার আবার দিতে চান?">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-sm">🔁 আবার অর্ডার করুন</button>
+    </form>
+    <a href="{% url 'orders:subscription_create' %}?product={{ order.items.first.product_id }}" class="btn btn-outline btn-sm">🔁 এটা নিয়মিত (Subscription) করুন</a>
+  {% endif %}
+
+  {% if order.status == 'CREATED' or order.status == 'CONFIRMED' %}
+    <form method="post" action="{% url 'orders:order_cancel' order.pk %}" data-confirm="আপনি কি নিশ্চিত এই অর্ডারটি বাতিল করতে চান?">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-danger btn-sm">অর্ডার বাতিল করুন</button>
+    </form>
+  {% endif %}
+  {% else %}
+    <p style="color:var(--muted);margin-top:10px;">👁️ Admin view -- কাস্টমারের নিজের অ্যাকাউন্ট থেকে reorder/cancel করা যায়, এখান থেকে নয়।</p>
+  {% endif %}
+</div>
+{% endblock %}

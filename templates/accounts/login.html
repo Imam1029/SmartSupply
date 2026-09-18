@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}লগইন{% endblock %}
+{% block content %}
+<div class="card" style="max-width:420px;margin:0 auto;">
+  <h1>লগইন</h1>
+  <form method="post">
+    {% csrf_token %}
+    {% for field in form %}
+      <div class="field">
+        <label>{{ field.label }}</label>
+        {{ field }}
+        {% for error in field.errors %}<div class="alert alert-error">{{ error }}</div>{% endfor %}
+      </div>
+    {% endfor %}
+    <button type="submit" class="btn">লগইন করুন</button>
+  </form>
+  <p style="margin-top:14px;">অ্যাকাউন্ট নেই? <a href="{% url 'accounts:register' %}">রেজিস্ট্রেশন করুন</a></p>
+  <p><a href="{% url 'accounts:forgot_password' %}">পাসওয়ার্ড ভুলে গেছেন?</a></p>
+</div>
+{% endblock %}

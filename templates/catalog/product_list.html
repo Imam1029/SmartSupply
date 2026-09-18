@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}পণ্য | Smart Water{% endblock %}
+{% block content %}
+<h1>সব পণ্য</h1>
+
+<form method="get" class="card" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+  <div class="field" style="flex:2;min-width:180px;margin:0;">
+    <label>খুঁজুন</label>
+    <input type="text" name="q" value="{{ query }}" placeholder="পণ্যের নাম...">
+  </div>
+  <div class="field" style="flex:1;min-width:140px;margin:0;">
+    <label>সর্বোচ্চ পানির দাম</label>
+    <input type="number" name="max_price" value="{{ max_price }}" placeholder="৳">
+  </div>
+  <button type="submit" class="btn">ফিল্টার করুন</button>
+  {% if query or max_price %}<a href="{% url 'catalog:product_list' %}" class="btn btn-outline">রিসেট</a>{% endif %}
+</form>
+
+<div class="grid">
+  {% for p in page_obj %}
+    <div class="card product-card">
+      {% if p.image %}<img src="{{ p.image.url }}" alt="{{ p.name }}">{% else %}<div style="height:140px;background:#eef4f6;border-radius:8px;"></div>{% endif %}
+      <h3>{{ p.name }}</h3>
+      <p>{{ p.bottle_size_liters }}L</p>
+      <p>রিফিল: <span class="price">৳{{ p.water_price }}</span></p>
+      <p>প্রথমবার (বোতলসহ): <span class="price">৳{{ p.first_purchase_total }}</span></p>
+      {% if p.is_low_stock %}<p class="status-pill pending">Stock কম</p>{% endif %}
+      <div class="action-row">
+        <a href="{% url 'catalog:product_detail' p.pk %}" class="btn btn-outline btn-sm">বিস্তারিত</a>
+        {% if request.user.is_authenticated %}
+        <form method="post" action="{% url 'orders:cart_add' %}" style="display:inline;">
+          {% csrf_token %}
+          <input type="hidden" name="product_id" value="{{ p.pk }}">
+          <input type="hidden" name="quantity" value="1">
+          <button type="submit" class="btn btn-sm">🛒 কার্টে যোগ করুন</button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+  {% empty %}
+    <p>কোনো পণ্য পাওয়া যায়নি।</p>
+  {% endfor %}
+</div>
+{% if page_obj.has_other_pages %}
+  <div class="action-row" style="justify-content:center;">
+    {% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}&q={{ query }}&max_price={{ max_price }}" class="btn btn-sm btn-outline">← আগের</a>{% endif %}
+    <span style="align-self:center;color:var(--muted);">পাতা {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+    {% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}&q={{ query }}&max_price={{ max_price }}" class="btn btn-sm btn-outline">পরের →</a>{% endif %}
+  </div>
+{% endif %}
+{% endblock %}

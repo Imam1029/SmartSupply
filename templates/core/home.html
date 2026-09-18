@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}হোম | Smart Water{% endblock %}
+{% block content %}
+<section class="hero">
+  <h1>বিশুদ্ধ পানি, সহজ ডেলিভারি, Reusable Bottle</h1>
+  <p>Order করুন, বোতল bদল করুন, পানি পান — পুরো সিস্টেম একটি প্ল্যাটফর্মে।</p>
+  <a href="{% url 'catalog:product_list' %}" class="btn">এখনই অর্ডার করুন</a>
+  {% if not request.user.is_authenticated %}
+    <a href="{% url 'orders:guest_order_start' %}" class="btn btn-outline" style="border-color:#fff;color:#fff;">একাউন্ট ছাড়াই অর্ডার করুন</a>
+  {% endif %}
+</section>
+
+<h2>জনপ্রিয় পণ্য</h2>
+<div class="grid">
+  {% for p in products %}
+    <div class="card product-card">
+      {% if p.image %}<img src="{{ p.image.url }}" alt="{{ p.name }}">{% else %}<div style="height:140px;background:#eef4f6;border-radius:8px;"></div>{% endif %}
+      <h3>{{ p.name }}</h3>
+      <p>{{ p.bottle_size_liters }}L — <span class="price">৳{{ p.water_price }}</span> (refill) / প্রথমবার ৳{{ p.first_purchase_total }}</p>
+      <a href="{% url 'catalog:product_detail' p.pk %}" class="btn btn-outline btn-sm">বিস্তারিত</a>
+    </div>
+  {% empty %}
+    <p>এখনো কোনো পণ্য যোগ করা হয়নি। Admin panel থেকে product যোগ করুন।</p>
+  {% endfor %}
+</div>
+{% endblock %}

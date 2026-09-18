@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}GPS Tracking{% endblock %}
+{% block content %}
+<h1>📍 Staff GPS Tracking (Phase 2)</h1>
+<p style="color:var(--muted);font-size:0.9rem;">প্রতিটি স্টাফের সর্বশেষ known location। এটি একটি simple list-based view — চাইলে পরে Google Maps JS API দিয়ে একটা live map-এ upgrade করা যাবে, ডাটা মডেল একই থাকবে।</p>
+<div class="card">
+  <div class="table-scroll">
+  <table>
+    <tr><th>Staff</th><th>Latitude</th><th>Longitude</th><th>শেষ আপডেট</th><th></th></tr>
+    {% for p in pings %}
+      <tr>
+        <td>{{ p.staff.get_full_name|default:p.staff.phone }}</td>
+        <td>{{ p.latitude }}</td>
+        <td>{{ p.longitude }}</td>
+        <td>{{ p.recorded_at }}</td>
+        <td><a href="https://www.google.com/maps?q={{ p.latitude }},{{ p.longitude }}" target="_blank">মানচিত্রে দেখুন</a></td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="5">এখনো কোনো GPS ping পাওয়া যায়নি। Staff Panel খোলা থাকলে location আসা শুরু করবে (browser location permission লাগবে)।</td></tr>
+    {% endfor %}
+  </table>
+  </div>
+</div>
+{% endblock %}

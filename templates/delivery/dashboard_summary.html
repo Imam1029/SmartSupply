@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Dashboard Summary{% endblock %}
+{% block content %}
+<h1>📊 Dashboard Summary</h1>
+
+<div class="grid">
+  <div class="card">
+    <p style="color:var(--muted);">আজকের অর্ডার</p>
+    <h2>{{ today_order_count }}</h2>
+  </div>
+  <div class="card">
+    <p style="color:var(--muted);">আজকের আয় (আনুমানিক)</p>
+    <h2>৳{{ today_revenue }}</h2>
+  </div>
+  <div class="card">
+    <p style="color:var(--muted);">Pending Delivery</p>
+    <h2>{{ pending_delivery_count }}</h2>
+  </div>
+  <div class="card">
+    <p style="color:var(--muted);">আজকে Delivered</p>
+    <h2>{{ delivered_today }}</h2>
+  </div>
+</div>
+
+<div class="card" style="background:#eff6ff;border-color:#bfdbfe;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+  <div>
+    <h3 style="margin:0 0 4px;">🧑‍✈️ Staff Assignment বাকি আছে</h3>
+    <p style="margin:0;color:var(--muted);">নতুন/confirmed অর্ডার যেগুলোতে এখনো কোনো delivery staff assign করা হয়নি।</p>
+  </div>
+  <a href="{% url 'delivery:unassigned_orders' %}" class="btn">Assign করুন →</a>
+</div>
+
+<div class="card" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+  <div>
+    <h3 style="margin:0 0 4px;">📞 ফোনে অর্ডার এসেছে?</h3>
+    <p style="margin:0;color:var(--muted);">কল করে অর্ডার দেওয়া কাস্টমারের জন্য সরাসরি অর্ডার বসিয়ে দিন।</p>
+  </div>
+  <a href="{% url 'orders:admin_place_order' %}" class="btn btn-outline">অর্ডার বসান →</a>
+</div>
+
+<div class="grid">
+  <div class="card">
+    <h3 style="margin-top:0;">📦 Low Stock পণ্য</h3>
+    {% if low_stock_products %}
+  <div class="table-scroll">
+      <table>
+        {% for p in low_stock_products %}
+          <tr><td>{{ p.name }}</td><td>{{ p.available_stock }} বাকি</td></tr>
+        {% endfor %}
+      </table>
+  </div>
+    {% else %}
+      <p style="color:var(--muted);">সব পণ্যের স্টক ঠিক আছে।</p>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0;">💵 Cash Handover (আজ)</h3>
+    {% if cash_pending_count %}
+      <p><span class="status-pill pending">{{ cash_pending_count }}টি</span> staff-এর handover এখনো verify হয়নি।</p>
+      <p>মোট pending পার্থক্য: ৳{{ cash_pending_total }}</p>
+    {% else %}
+      <p style="color:var(--muted);">আজকের সব cash handover verify হয়ে গেছে (অথবা এখনো কোনো COD delivery নেই)।</p>
+    {% endif %}
+  </div>
+</div>
+
+<div class="card">
+  <h3 style="margin-top:0;">📋 Order Status Breakdown (সর্বমোট)</h3>
+  <div class="table-scroll">
+  <table>
+    <tr><th>Status</th><th>সংখ্যা</th></tr>
+    {% for s in status_breakdown %}
+      <tr><td>{{ s.status }}</td><td>{{ s.count }}</td></tr>
+    {% endfor %}
+  </table>
+  </div>
+</div>
+{% endblock %}

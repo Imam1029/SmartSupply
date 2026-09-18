@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Unassigned Orders{% endblock %}
+{% block content %}
+<h1>🧑‍✈️ Staff Assignment বাকি</h1>
+<p style="color:var(--muted);">এই অর্ডারগুলোতে এখনো কোনো delivery staff assign করা হয়নি।</p>
+
+{% if orders %}
+<div class="table-scroll">
+  <table>
+    <tr><th>Order</th><th>কাস্টমার</th><th>ঠিকানা</th><th>মোট</th><th>Status</th><th></th></tr>
+    {% for o in orders %}
+      <tr>
+        <td class="mono">{{ o.order_uid|slice:":8" }}</td>
+        <td>{{ o.customer.get_full_name|default:o.customer.phone }}</td>
+        <td>{{ o.delivery_address.display_lines|join:", "|truncatechars:40 }}</td>
+        <td>৳{{ o.total_amount }}</td>
+        <td>{{ o.get_status_display }}</td>
+        <td><a href="{% url 'delivery:assign_staff' o.pk %}" class="btn btn-sm">Assign করুন</a></td>
+      </tr>
+    {% endfor %}
+  </table>
+</div>
+{% else %}
+  <p class="card">সব অর্ডার assign করা হয়ে গেছে -- এখন কোনো pending নেই। 🎉</p>
+{% endif %}
+{% endblock %}

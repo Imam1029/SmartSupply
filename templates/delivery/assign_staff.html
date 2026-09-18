@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Assign Staff{% endblock %}
+{% block content %}
+<div class="card" style="max-width:480px;margin:0 auto;">
+  <h1>Staff Assign করুন</h1>
+  <p><strong>Order:</strong> {{ order.order_uid|slice:":8" }}</p>
+  <p><strong>কাস্টমার:</strong> {{ order.customer.get_full_name|default:order.customer.phone }}</p>
+  <p><strong>ঠিকানা:</strong> {{ order.delivery_address.display_lines|join:", " }}</p>
+
+  {% if active_staff %}
+  <form method="post">
+    {% csrf_token %}
+    <div class="field">
+      <label>Delivery Staff বেছে নিন (workload অনুযায়ী সাজানো, কম কাজ যার আগে)</label>
+      <select name="staff_id" required>
+        <option value="">-- নির্বাচন করুন --</option>
+        {% for s in active_staff %}
+          <option value="{{ s.pk }}">{{ s.get_full_name|default:s.phone }} — বর্তমানে {{ s.active_order_count }}টি অর্ডার{% if s.active_order_count == 0 %} (ফাঁকা){% endif %}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button type="submit" class="btn">✅ Assign করুন</button>
+    <a href="{% url 'delivery:unassigned_orders' %}" class="btn btn-outline">বাতিল</a>
+  </form>
+  {% else %}
+    <p class="alert alert-error">কোনো active delivery staff পাওয়া যায়নি -- আগে staff account তৈরি/active করুন।</p>
+  {% endif %}
+</div>
+{% endblock %}

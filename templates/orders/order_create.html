@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Checkout{% endblock %}
+{% block content %}
+<div class="card" style="max-width:560px;margin:0 auto;">
+  <h1>Checkout</h1>
+
+  <h3>আপনার কার্ট</h3>
+  <div class="table-scroll">
+    <table>
+      <tr><th>পণ্য</th><th>পরিমাণ</th><th>ধরন</th><th>দাম</th></tr>
+      {% for line in preview_lines %}
+        <tr>
+          <td>{{ line.product.name }}</td>
+          <td>{{ line.quantity }}</td>
+          <td>{% if line.is_refill %}🔁 Refill{% else %}🆕 নতুন বোতল+পানি{% endif %}</td>
+          <td class="mono">৳{{ line.line_total }}</td>
+        </tr>
+      {% endfor %}
+    </table>
+  </div>
+  <p><a href="{% url 'orders:cart' %}" class="btn btn-outline btn-sm">← কার্ট এডিট করুন</a></p>
+  <h3>সাবটোটাল: ৳{{ preview_total }}</h3>
+  <p style="color:var(--muted);font-size:0.85rem;">চূড়ান্ত মোট-এ ডেলিভারি চার্জ, Express fee (যদি থাকে), ও প্রোমো ছাড় যোগ/বিয়োগ হবে।</p>
+
+  <form method="post">
+    {% csrf_token %}
+    {% for field in form %}
+      <div class="field {% if field.name == 'is_express' %}checkbox-field{% endif %}">
+        {% if field.name != 'is_express' %}<label>{{ field.label }}</label>{% endif %}
+        {{ field }}
+        {% if field.name == 'is_express' %}<label>{{ field.label }}</label>{% endif %}
+        {% for error in field.errors %}<div class="alert alert-error">{{ error }}</div>{% endfor %}
+      </div>
+    {% endfor %}
+    <p style="color:var(--muted);font-size:0.85rem;">প্রথমবার অর্ডার করা পণ্যের জন্য Bottle + Water দুটোর দামই একসাথে দিতে হয় (বোতলের মালিকানা আপনার হয়ে যায়)। এরপর থেকে refill-এ শুধু পানির দাম লাগবে, বোতল ফেরত দিলেই হবে।</p>
+    <button type="submit" class="btn">✅ অর্ডার নিশ্চিত করুন</button>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Corporate Dashboard{% endblock %}
+{% block content %}
+<h1>🏢 {{ client.company_name }} — Corporate Account</h1>
+
+<div class="grid">
+  <div class="card">
+    <p style="color:var(--muted);">Credit Limit</p>
+    <h2>৳{{ client.credit_limit }}</h2>
+  </div>
+  <div class="card">
+    <p style="color:var(--muted);">Outstanding</p>
+    <h2>৳{{ client.current_outstanding }}</h2>
+  </div>
+  <div class="card">
+    <p style="color:var(--muted);">Available Credit</p>
+    <h2>৳{{ client.available_credit }}</h2>
+  </div>
+</div>
+
+<div class="action-row">
+  <a href="{% url 'b2b:order_create' client.pk %}" class="btn">নতুন Bulk Order (Postpaid)</a>
+</div>
+
+<h2 style="margin-top:30px;">Invoices</h2>
+<div class="card">
+  <div class="table-scroll">
+  <table>
+    <tr><th>Invoice</th><th>Period</th><th>Due Date</th><th>মোট</th><th>পরিশোধিত</th><th>Status</th><th></th></tr>
+    {% for inv in invoices %}
+      <tr>
+        <td>{{ inv.invoice_uid|slice:":8" }}</td>
+        <td>{{ inv.period_start }} - {{ inv.period_end }}</td>
+        <td>{{ inv.due_date }}</td>
+        <td>৳{{ inv.total_amount }}</td>
+        <td>৳{{ inv.amount_paid }}</td>
+        <td><span class="status-pill {% if inv.status == 'OVERDUE' %}failed{% elif inv.status == 'ISSUED' %}pending{% endif %}">{{ inv.get_status_display }}</span></td>
+        <td><a href="{% url 'b2b:invoice_detail' inv.pk %}">দেখুন</a></td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="7">এখনো কোনো invoice তৈরি হয়নি।</td></tr>
+    {% endfor %}
+  </table>
+  </div>
+</div>
+{% endblock %}

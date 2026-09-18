@@ -1,0 +1,194 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/svg+xml" href="{% static 'img/favicon.svg' %}">
+  <link rel="apple-touch-icon" href="{% static 'img/favicon.svg' %}">
+  <link rel="manifest" href="{% static 'manifest.json' %}">
+  <meta name="theme-color" content="#0e7490">
+  <title>{% block title %}Smart Water Platform{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+  <header class="navbar">
+    <div class="container navbar-inner">
+      <a href="{% url 'core:home' %}" class="brand">💧 Smart Water</a>
+      <button class="nav-toggle" id="nav-toggle" aria-label="Menu">☰</button>
+      <nav class="nav-links" id="nav-links">
+        <a href="{% url 'catalog:product_list' %}">পণ্য</a>
+        {% if user.is_authenticated %}
+          {% if user.role == 'DELIVERY_STAFF' %}
+            <a href="{% url 'delivery:staff_dashboard' %}">Staff Panel</a>
+          {% else %}
+            <a href="{% url 'orders:order_create' %}">অর্ডার করুন</a>
+            <a href="{% url 'orders:subscription_list' %}">Subscription</a>
+            <a href="{% url 'accounts:dashboard' %}">আমার প্যানেল</a>
+            {% if user.corporate_clients.exists %}
+              <a href="{% url 'b2b:dashboard' %}">Corporate Account</a>
+            {% endif %}
+          {% endif %}
+          {% if user.is_staff %}
+            <a href="{% url 'admin:index' %}">Admin</a>
+            {% if user.is_superuser or user.role == 'ADMIN' or user.role == 'OPERATIONS_MANAGER' or user.role == 'DELIVERY_MANAGER' or user.role == 'ACCOUNTANT' %}
+              <a href="{% url 'delivery:dashboard_summary' %}">Dashboard</a>
+              <a href="{% url 'delivery:order_search' %}">🔍 অর্ডার খুঁজুন</a>
+              {% if user.role == 'ADMIN' or user.role == 'OPERATIONS_MANAGER' or user.role == 'DELIVERY_MANAGER' or user.is_superuser %}
+                <a href="{% url 'delivery:unassigned_orders' %}" class="badge" style="background:{% if nav_unassigned_count %}#dc2626{% else %}var(--accent){% endif %};color:#fff;">📋 {{ nav_unassigned_count|default:0 }}</a>
+              {% endif %}
+            {% endif %}
+            {% if user.is_superuser or user.role == 'ADMIN' or user.role == 'OPERATIONS_MANAGER' or user.role == 'DELIVERY_MANAGER' %}
+              <a href="{% url 'delivery:gps_tracking' %}">GPS Tracking</a>
+            {% endif %}
+          {% endif %}
+          <a href="{% url 'accounts:notifications' %}" class="badge">🔔 {{ nav_unread_count|default:0 }}</a>
+          <a href="{% url 'accounts:logout' %}">লগআউট</a>
+        {% else %}
+          <a href="{% url 'orders:guest_order_start' %}">Guest Order</a>
+          <a href="{% url 'accounts:login' %}">লগইন</a>
+          <a href="{% url 'accounts:register' %}" class="btn-ghost">রেজিস্ট্রেশন</a>
+        {% endif %}
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    {% if messages %}
+      <div class="messages">
+        {% for message in messages %}
+          <div class="alert alert-{{ message.tags }} alert-dismissible">
+            <span>{{ message }}</span>
+            <button type="button" class="alert-close" aria-label="বন্ধ করুন">×</button>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- Reusable confirm modal: any form/link with data-confirm="message" gets
+       intercepted and shown here instead of the browser's default confirm() -->
+  <div id="confirm-modal-overlay" class="modal-overlay" style="display:none;">
+    <div class="modal-box">
+      <p id="confirm-modal-message"></p>
+      <div class="action-row" style="justify-content:flex-end;">
+        <button type="button" class="btn btn-outline btn-sm" id="confirm-modal-cancel">না</button>
+        <button type="button" class="btn btn-danger btn-sm" id="confirm-modal-ok">হ্যাঁ, নিশ্চিত</button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <div class="container">Smart Water Supply, Delivery &amp; Reusable Bottle Tracking Platform — Phase 1 MVP</div>
+  </footer>
+
+  <script>
+    (function () {
+      const toggle = document.getElementById("nav-toggle");
+      const links = document.getElementById("nav-links");
+      if (toggle && links) {
+        toggle.addEventListener("click", () => links.classList.toggle("open"));
+      }
+    })();
+
+    // Flash messages: manual close button + auto-fade after a few seconds.
+    (function () {
+      function dismiss(el) {
+        el.classList.add("alert-fading");
+        setTimeout(() => el.remove(), 400);
+      }
+      document.querySelectorAll(".alert-dismissible").forEach((el) => {
+        const closeBtn = el.querySelector(".alert-close");
+        if (closeBtn) closeBtn.addEventListener("click", () => dismiss(el));
+        setTimeout(() => dismiss(el), 6000);
+      });
+    })();
+
+    // Visual-only phone number formatting (017X XXX XXXX) as the user
+    // types, on any input whose id contains "phone". Doesn't change what's
+    // submitted in a meaningful way -- normalize_bd_phone() already strips
+    // spaces/dashes server-side, so this is purely for readability while
+    // typing/checking a number.
+    (function () {
+      document.querySelectorAll('input[id*="phone" i]').forEach((input) => {
+        input.addEventListener("input", () => {
+          const digits = input.value.replace(/[^\d+]/g, "").slice(0, 14);
+          let formatted = digits;
+          const local = digits.replace(/^(\+?880|0)/, "");
+          if (/^\d{6,11}$/.test(local) && !digits.startsWith("+")) {
+            const prefix = digits.startsWith("880") ? "880" : digits.startsWith("0") ? "0" : "";
+            formatted = (prefix + local.slice(0, 4) + " " + local.slice(4, 7) + " " + local.slice(7, 11)).trim();
+          }
+          if (formatted !== input.value) {
+            const pos = input.selectionStart;
+            input.value = formatted;
+            input.setSelectionRange(pos, pos);
+          }
+        });
+      });
+    })();
+
+    // PWA install/offline support. Registered from the root path so its
+    // scope covers the whole site (see core/views.py::service_worker_view
+    // for why /sw.js instead of /static/sw.js). Skipped outside HTTPS/
+    // localhost since browsers refuse service workers on plain HTTP.
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("/sw.js").catch((err) => {
+          console.warn("Service worker registration failed:", err);
+        });
+      });
+    }
+
+    // Reusable confirm modal -- replaces window.confirm() for delete/cancel
+    // actions. Add data-confirm="Your message" to any <form> or <a>.
+    (function () {
+      const overlay = document.getElementById("confirm-modal-overlay");
+      const messageEl = document.getElementById("confirm-modal-message");
+      const okBtn = document.getElementById("confirm-modal-ok");
+      const cancelBtn = document.getElementById("confirm-modal-cancel");
+      let pendingEl = null;
+
+      function openModal(el) {
+        pendingEl = el;
+        messageEl.textContent = el.getAttribute("data-confirm");
+        overlay.style.display = "flex";
+      }
+      function closeModal() {
+        overlay.style.display = "none";
+        pendingEl = null;
+      }
+
+      document.querySelectorAll("[data-confirm]").forEach((el) => {
+        if (el.tagName === "FORM") {
+          el.addEventListener("submit", function (e) {
+            if (!el.dataset.confirmed) {
+              e.preventDefault();
+              openModal(el);
+            }
+          });
+        } else if (el.tagName === "A") {
+          el.addEventListener("click", function (e) {
+            e.preventDefault();
+            openModal(el);
+          });
+        }
+      });
+
+      okBtn.addEventListener("click", function () {
+        if (!pendingEl) return;
+        if (pendingEl.tagName === "FORM") {
+          pendingEl.dataset.confirmed = "1";
+          pendingEl.submit();
+        } else if (pendingEl.tagName === "A") {
+          window.location.href = pendingEl.getAttribute("href");
+        }
+        closeModal();
+      });
+      cancelBtn.addEventListener("click", closeModal);
+      overlay.addEventListener("click", function (e) { if (e.target === overlay) closeModal(); });
+    })();
+  </script>
+</body>
+</html>

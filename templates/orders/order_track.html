@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}অর্ডার ট্র্যাক করুন{% endblock %}
+{% block content %}
+<h1>🚚 Live Tracking</h1>
+<p><strong>Order:</strong> {{ order.order_uid|slice:":8" }} -- {{ order.get_status_display }}</p>
+
+{% if is_trackable %}
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <div id="track-map" style="height:360px;border-radius:12px;overflow:hidden;"></div>
+  <p id="track-status" style="color:var(--muted);margin-top:10px;">স্টাফের অবস্থান লোড হচ্ছে...</p>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    (function () {
+      const destLat = {{ order.delivery_address.latitude|default:"null" }};
+      const destLng = {{ order.delivery_address.longitude|default:"null" }};
+      const map = L.map("track-map").setView([destLat || 23.8103, destLng || 90.4125], 13);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: "&copy; OpenStreetMap contributors",
+      }).addTo(map);
+
+      let destMarker = null;
+      if (destLat && destLng) {
+        destMarker = L.marker([destLat, destLng]).addTo(map).bindPopup("আপনার ঠিকানা");
+      }
+      let staffMarker = null;
+      const statusEl = document.getElementById("track-status");
+
+      function poll() {
+        fetch("{% url 'orders:order_track_data' order.pk %}")
+          .then((r) => r.json())
+          .then((data) => {
+            if (!data.available) {
+              statusEl.textContent = "স্টাফের অবস্থান এখনো পাওয়া যায়নি -- একটু পরে আবার চেষ্টা করা হবে।";
+              return;
+            }
+            const pos = [data.latitude, data.longitude];
+            if (!staffMarker) {
+              staffMarker = L.marker(pos, {
+                icon: L.divIcon({ className: "", html: "🚴", iconSize: [24, 24] }),
+              }).addTo(map).bindPopup(data.staff_name);
+              const bounds = destMarker ? L.latLngBounds([pos, [destLat, destLng]]) : L.latLngBounds([pos]);
+              map.fitBounds(bounds, { padding: [40, 40] });
+            } else {
+              staffMarker.setLatLng(pos);
+            }
+            const t = new Date(data.recorded_at);
+            statusEl.textContent = "সর্বশেষ অবস্থান আপডেট: " + t.toLocaleTimeString("bn-BD");
+          })
+          .catch(() => { statusEl.textContent = "অবস্থান লোড করা যায়নি -- নেটওয়ার্ক চেক করুন।"; });
+      }
+      poll();
+      setInterval(poll, 15000);
+    })();
+  </script>
+{% else %}
+  <div class="card">
+    <p>এই অর্ডারের জন্য এখনো live tracking চালু হয়নি।</p>
+    <p style="color:var(--muted);">Delivery staff assign হওয়ার পর এবং ডেলিভারির জন্য বের হলে এখানে লাইভ অবস্থান দেখা যাবে।</p>
+  </div>
+{% endif %}
+
+<a href="{% url 'orders:order_detail' order.pk %}" class="btn btn-outline" style="margin-top:14px;display:inline-block;">← অর্ডার বিস্তারিত</a>
+{% endblock %}

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <title>Receipt - Order #{{ order.order_uid|slice:":8" }}</title>
+  <style>
+    body { font-family: "Segoe UI", "Noto Sans Bengali", Arial, sans-serif; color: #16323b; max-width: 640px; margin: 30px auto; padding: 0 20px; }
+    .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #0e7490; padding-bottom: 14px; margin-bottom: 20px; }
+    .brand { font-size: 1.4rem; font-weight: 700; color: #0e7490; }
+    table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+    th, td { text-align: left; padding: 8px; border-bottom: 1px solid #dbe7eb; font-size: 0.92rem; }
+    th { color: #5c7680; }
+    .totals td { border: none; padding: 4px 8px; }
+    .totals .grand { font-size: 1.15rem; font-weight: 700; border-top: 2px solid #16323b; }
+    .print-btn { margin: 20px 0; padding: 10px 18px; background: #0e7490; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 0.95rem; }
+    @media print { .print-btn { display: none; } }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="brand">💧 Smart Water</div>
+    <div style="text-align:right;font-size:0.85rem;color:#5c7680;">
+      Receipt<br>Order #{{ order.order_uid|slice:":8" }}<br>{{ order.created_at|date:"d M Y, H:i" }}
+    </div>
+  </div>
+
+  <button class="print-btn" onclick="window.print()">🖨️ Print / Save as PDF</button>
+
+  <p><strong>গ্রাহক:</strong> {{ order.customer.get_full_name|default:order.customer.phone }} ({{ order.customer.phone }})</p>
+  <p><strong>ডেলিভারি ঠিকানা:</strong> {{ order.delivery_address.display_lines|join:", " }}</p>
+  <p><strong>ধরন:</strong> {{ order.get_order_type_display }} &nbsp; | &nbsp; <strong>Payment:</strong> {{ order.get_payment_method_display }} &nbsp; | &nbsp; <strong>Status:</strong> {{ order.get_status_display }}</p>
+
+  <div class="table-scroll">
+  <table>
+    <tr><th>পণ্য</th><th>পরিমাণ</th><th>পানির দাম</th><th>বোতলের দাম</th></tr>
+    {% for item in order.items.all %}
+      <tr><td>{{ item.product.name }}</td><td>{{ item.quantity }}</td><td>৳{{ item.unit_water_price }}</td><td>৳{{ item.unit_bottle_price }}</td></tr>
+    {% endfor %}
+  </table>
+  </div>
+
+  <table class="totals">
+    <tr><td>সাবটোটাল</td><td style="text-align:right;">৳{{ order.water_amount|add:order.bottle_amount }}</td></tr>
+    <tr><td>ডেলিভারি চার্জ</td><td style="text-align:right;">৳{{ order.delivery_charge }}</td></tr>
+    {% if order.is_express %}<tr><td>Express Fee</td><td style="text-align:right;">৳{{ order.express_fee }}</td></tr>{% endif %}
+    {% if order.promo_code %}<tr><td>ছাড় ({{ order.promo_code.code }})</td><td style="text-align:right;">-৳{{ order.discount_amount }}</td></tr>{% endif %}
+    <tr class="grand"><td>মোট</td><td style="text-align:right;">৳{{ order.total_amount }}</td></tr>
+  </table>
+
+  <p style="color:#5c7680;font-size:0.8rem;margin-top:30px;">Smart Water Supply, Delivery &amp; Reusable Bottle Tracking Platform — এটি একটি স্বয়ংক্রিয়ভাবে তৈরি রসিদ।</p>
+</body>
+</html>

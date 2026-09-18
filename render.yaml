@@ -1,0 +1,33 @@
+# Render Blueprint -- push this repo and click "New +" -> "Blueprint" in
+# the Render dashboard to provision both services below in one go,
+# instead of configuring the web service and database by hand.
+# https://render.com/docs/blueprint-spec
+
+databases:
+  - name: smartwater-db
+    plan: free
+    databaseName: smartwater
+    user: smartwater
+
+services:
+  - type: web
+    name: smartwater
+    runtime: python
+    plan: free
+    buildCommand: ./build.sh
+    startCommand: gunicorn smartwater.wsgi:application
+    envVars:
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DJANGO_DEBUG
+        value: "False"
+      - key: DJANGO_ALLOWED_HOSTS
+        value: ""  # RENDER_EXTERNAL_HOSTNAME is picked up automatically; add a custom domain here later
+      - key: DJANGO_CSRF_TRUSTED_ORIGINS
+        value: ""  # same -- only needed for a custom domain
+      - key: DATABASE_URL
+        fromDatabase:
+          name: smartwater-db
+          property: connectionString
+      - key: PYTHON_VERSION
+        value: "3.12.6"

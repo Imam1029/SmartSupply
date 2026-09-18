@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}আমার ঠিকানা{% endblock %}
+{% block content %}
+<h1>ডেলিভারি ঠিকানা</h1>
+
+<div class="card">
+  <h3>নতুন ঠিকানা যোগ করুন</h3>
+  <form method="post">
+    {% csrf_token %}
+    {% for field in form %}
+      <div class="field {% if field.name == 'is_default' %}checkbox-field{% endif %}">
+        {% if field.name != 'is_default' %}<label>{{ field.label }}</label>{% endif %}
+        {{ field }}
+        {% if field.name == 'is_default' %}<label>{{ field.label }}</label>{% endif %}
+      </div>
+    {% endfor %}
+    <button type="submit" class="btn">যোগ করুন</button>
+  </form>
+</div>
+
+<h2 style="margin-top:26px;">আপনার ঠিকানাসমূহ</h2>
+{% for a in addresses %}
+  <div class="card">
+    <strong>{{ a.label }}</strong> {% if a.is_default %}<span class="status-pill">Default</span>{% endif %}
+    <p>{{ a.display_lines|join:", " }}</p>
+    <div class="action-row">
+      <a href="{% url 'accounts:address_edit' a.pk %}" class="btn btn-outline btn-sm">এডিট করুন</a>
+      <a href="{% url 'accounts:address_delete' a.pk %}" class="btn btn-danger btn-sm" data-confirm="আপনি কি নিশ্চিত এই ঠিকানাটি মুছে ফেলতে চান?">মুছুন</a>
+    </div>
+  </div>
+{% empty %}
+  <p>কোনো ঠিকানা নেই।</p>
+{% endfor %}
+{% endblock %}

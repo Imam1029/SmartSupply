@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}{{ product.name }} | Smart Water{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>{{ product.name }}</h1>
+  <p>{{ product.description }}</p>
+  <p>বোতলের সাইজ: {{ product.bottle_size_liters }}L</p>
+  <p>Water Price: ৳{{ product.water_price }}</p>
+  <p>Bottle Price: ৳{{ product.bottle_price }}</p>
+  <p>প্রথমবার মোট: <strong>৳{{ product.first_purchase_total }}</strong></p>
+  <p>স্টক: {{ product.available_stock }}</p>
+  {% if request.user.is_authenticated %}
+  <form method="post" action="{% url 'orders:cart_add' %}" style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;">
+    {% csrf_token %}
+    <input type="hidden" name="product_id" value="{{ product.pk }}">
+    <div class="field" style="margin:0;">
+      <label>পরিমাণ</label>
+      <input type="number" name="quantity" value="1" min="1" style="width:90px;">
+    </div>
+    <button type="submit" class="btn">🛒 কার্টে যোগ করুন</button>
+  </form>
+  {% else %}
+  <div class="action-row">
+    <a href="{% url 'accounts:login' %}?next={{ request.path }}" class="btn">লগইন করে অর্ডার করুন</a>
+    <a href="{% url 'orders:guest_order_start' %}" class="btn btn-outline">Guest হিসেবে অর্ডার করুন</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Order Manage{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>Order #{{ order.order_uid|slice:":8" }}</h1>
+  <p>Customer: {{ order.customer.get_full_name|default:order.customer.phone }} — {{ order.customer.phone }}</p>
+  <p>Address: {{ order.delivery_address.display_lines|join:", " }}</p>
+  <p>ধরন: <strong>{{ order.get_order_type_display }}</strong> | Status: <span class="status-pill">{{ order.get_status_display }}</span></p>
+  <p>Payment: {{ order.get_payment_method_display }} — মোট ৳{{ order.total_amount }}</p>
+
+  <div class="action-row">
+    {% if order.status == 'ASSIGNED' or order.status == 'CONFIRMED' %}
+      <form method="post" action="{% url 'delivery:start_delivery' order.pk %}">
+        {% csrf_token %}
+        <button class="btn">🚚 Out for Delivery শুরু করুন</button>
+      </form>
+    {% endif %}
+  </div>
+
+  {% if order.order_type != 'FIRST_PURCHASE' %}
+    <div class="card" style="background:#f8fbfc;">
+      <h3>ধাপ ১: খালি বোতল Collect করুন</h3>
+      <p style="color:var(--muted);font-size:0.85rem;">{% if order.order_type == 'MIXED' %}এই অর্ডারে refill ও নতুন বোতল দুটোই আছে -- refill অংশের জন্য খালি বোতল collect করুন।{% endif %}</p>
+      <form method="post" action="{% url 'delivery:collect_bottle' order.pk %}">
+        {% csrf_token %}
+        <div class="field">
+          <label>Bottle Condition</label>
+          <select name="condition">
+            <option value="GOOD">Good</option>
+            <option value="DAMAGED">Damaged</option>
+            <option value="UNUSABLE">Unusable</option>
+          </select>
+        </div>
+        <button class="btn btn-outline">খালি বোতল Collect সম্পন্ন</button>
+      </form>
+    </div>
+  {% endif %}
+
+  <div class="card" style="background:#f8fbfc;">
+    <h3>ধাপ ২: পূর্ণ বোতল Deliver করুন</h3>
+    <form method="post" action="{% url 'delivery:deliver_bottle' order.pk %}">
+      {% csrf_token %}
+      <button class="btn btn-outline">✅ Full Bottle Deliver হয়েছে</button>
+    </form>
+  </div>
+
+  <div class="card" style="background:#f0fdf4;">
+    <h3>ধাপ ৩: Delivery সম্পন্ন করুন</h3>
+    <form method="post" action="{% url 'delivery:complete_delivery' order.pk %}">
+      {% csrf_token %}
+      <button class="btn btn-success">🏁 Delivery Complete (Payment সহ)</button>
+    </form>
+  </div>
+
+  <div class="card" style="background:#fef2f2;">
+    <h3>সমস্যা হলে</h3>
+    <a href="{% url 'delivery:report_exception' order.pk %}" class="btn btn-danger btn-sm">⚠️ Exception রিপোর্ট করুন</a>
+  </div>
+</div>
+{% endblock %}

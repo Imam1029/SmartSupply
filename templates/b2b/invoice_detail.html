@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Invoice {{ invoice.invoice_uid|slice:":8" }}{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>Invoice #{{ invoice.invoice_uid|slice:":8" }}</h1>
+  <p>Client: {{ invoice.client.company_name }}</p>
+  <p>Period: {{ invoice.period_start }} - {{ invoice.period_end }} | Due: {{ invoice.due_date }}</p>
+  <p>Status: <span class="status-pill {% if invoice.status == 'OVERDUE' %}failed{% endif %}">{{ invoice.get_status_display }}</span></p>
+
+  <div class="table-scroll">
+  <table>
+    <tr><th>Order</th><th>ধরন</th><th>মোট</th></tr>
+    {% for o in invoice.orders.all %}
+      <tr><td>{{ o.order_uid|slice:":8" }}</td><td>{{ o.get_order_type_display }}</td><td>৳{{ o.total_amount }}</td></tr>
+    {% endfor %}
+  </table>
+  </div>
+
+  <h3>মোট: ৳{{ invoice.total_amount }}</h3>
+  <p>পরিশোধিত: ৳{{ invoice.amount_paid }} | বাকি: ৳{{ invoice.balance_due }}</p>
+</div>
+{% endblock %}

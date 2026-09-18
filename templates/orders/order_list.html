@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}আমার অর্ডারসমূহ{% endblock %}
+{% block content %}
+<h1>আমার অর্ডারসমূহ</h1>
+
+<div class="action-row" style="margin-bottom:14px;">
+  <a href="{% url 'orders:order_list' %}" class="btn btn-sm {% if not status_filter %}btn{% else %}btn-outline{% endif %}">সব</a>
+  <a href="?status=pending" class="btn btn-sm {% if status_filter == 'PENDING' %}btn{% else %}btn-outline{% endif %}">চলমান</a>
+  <a href="?status=delivered" class="btn btn-sm {% if status_filter == 'DELIVERED' %}btn{% else %}btn-outline{% endif %}">সম্পন্ন</a>
+  <a href="?status=cancelled" class="btn btn-sm {% if status_filter == 'CANCELLED' %}btn{% else %}btn-outline{% endif %}">বাতিল</a>
+</div>
+
+<div class="card">
+  <div class="table-scroll">
+  <table>
+    <tr><th>Order</th><th>ধরন</th><th>Status</th><th>মোট</th><th></th></tr>
+    {% for o in page_obj %}
+      <tr>
+        <td>{{ o.order_uid|slice:":8" }}</td>
+        <td>{{ o.get_order_type_display }}</td>
+        <td>{{ o.get_status_display }}</td>
+        <td>৳{{ o.total_amount }}</td>
+        <td>
+          <a href="{% url 'orders:order_detail' o.pk %}">দেখুন</a>
+          {% if o.status != 'CANCELLED' %}
+            &nbsp;|&nbsp;
+            <form method="post" action="{% url 'orders:order_reorder' o.pk %}" style="display:inline;" data-confirm="এই একই অর্ডার আবার দিতে চান?">
+              {% csrf_token %}
+              <button type="submit" style="background:none;border:none;color:var(--primary);text-decoration:underline;cursor:pointer;padding:0;font-size:inherit;">🔁 আবার অর্ডার করুন</button>
+            </form>
+          {% endif %}
+        </td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="5">
+        <div style="text-align:center;padding:20px 0;">
+          <p style="color:var(--muted);margin-bottom:14px;">{% if status_filter %}এই ফিল্টারে কোনো অর্ডার নেই।{% else %}এখনো কোনো অর্ডার নেই।{% endif %}</p>
+          <a href="{% url 'orders:order_create' %}" class="btn">এখনই অর্ডার করুন</a>
+        </div>
+      </td></tr>
+    {% endfor %}
+  </table>
+  </div>
+</div>
+{% if page_obj.has_other_pages %}
+  <div class="action-row" style="justify-content:center;">
+    {% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}&status={{ status_filter }}" class="btn btn-sm btn-outline">← আগের</a>{% endif %}
+    <span style="align-self:center;color:var(--muted);">পাতা {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+    {% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}&status={{ status_filter }}" class="btn btn-sm btn-outline">পরের →</a>{% endif %}
+  </div>
+{% endif %}
+{% endblock %}

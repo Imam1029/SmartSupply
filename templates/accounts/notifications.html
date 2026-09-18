@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}নোটিফিকেশন{% endblock %}
+{% block content %}
+<div class="action-row" style="justify-content:space-between;align-items:center;">
+  <h1 style="margin:0;">নোটিফিকেশন</h1>
+  <form method="post">
+    {% csrf_token %}
+    <button type="submit" name="mark_all_read" value="1" class="btn btn-sm btn-outline">সব পড়া হয়েছে বলে চিহ্নিত করুন</button>
+  </form>
+</div>
+
+{% for n in page_obj %}
+  <div class="card" style="{% if not n.is_read %}border-left:4px solid var(--primary);{% endif %}">
+    <p style="margin:0;"><strong>{{ n.title }}</strong> {% if not n.is_read %}<span class="status-pill pending">নতুন</span>{% endif %}</p>
+    <p style="margin:6px 0;color:var(--muted);">{{ n.message }}</p>
+    <p style="margin:0;font-size:0.8rem;color:var(--muted);">{{ n.created_at }}</p>
+  </div>
+{% empty %}
+  <p>কোনো নোটিফিকেশন নেই।</p>
+{% endfor %}
+
+{% if page_obj.has_other_pages %}
+  <div class="action-row" style="justify-content:center;">
+    {% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}" class="btn btn-sm btn-outline">← আগের</a>{% endif %}
+    <span style="align-self:center;color:var(--muted);">পাতা {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+    {% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}" class="btn btn-sm btn-outline">পরের →</a>{% endif %}
+  </div>
+{% endif %}
+{% endblock %}

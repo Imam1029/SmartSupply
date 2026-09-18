@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}অর্ডার খুঁজুন{% endblock %}
+{% block content %}
+<h1>🔍 অর্ডার খুঁজুন</h1>
+<p style="color:var(--muted);">গ্রাহকের ফোন নম্বর অথবা Order ID দিয়ে খুঁজুন — Django Admin-এ যাওয়ার দরকার নেই।</p>
+
+<form method="get" class="card" style="display:flex;gap:10px;">
+  <input type="text" name="q" value="{{ query }}" placeholder="01XXXXXXXXX অথবা Order ID..." style="flex:1;">
+  <button type="submit" class="btn">খুঁজুন</button>
+</form>
+
+{% if query %}
+  {% if results %}
+    <div class="table-scroll">
+      <table>
+        <tr><th>Order</th><th>কাস্টমার</th><th>ফোন</th><th>Status</th><th>মোট</th><th></th></tr>
+        {% for o in results %}
+          <tr>
+            <td class="mono">{{ o.order_uid|slice:":8" }}</td>
+            <td>{{ o.customer.get_full_name|default:"—" }}</td>
+            <td>{{ o.customer.phone }}</td>
+            <td><span class="status-pill {% if o.status == 'FAILED' or o.status == 'CANCELLED' %}failed{% elif o.status == 'CREATED' %}pending{% endif %}">{{ o.get_status_display }}</span></td>
+            <td>৳{{ o.total_amount }}</td>
+            <td><a href="{% url 'orders:order_detail_admin' o.pk %}">দেখুন</a></td>
+          </tr>
+        {% endfor %}
+      </table>
+    </div>
+  {% else %}
+    <div class="card">
+      <p>"{{ query }}" দিয়ে কোনো অর্ডার/গ্রাহক পাওয়া যায়নি।</p>
+    </div>
+  {% endif %}
+{% endif %}
+{% endblock %}

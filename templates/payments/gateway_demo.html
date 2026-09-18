@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}{{ payment.get_method_display }} Payment{% endblock %}
+{% block content %}
+<div class="card" style="max-width:380px;margin:0 auto;text-align:center;">
+  <h2 style="color:{% if payment.method == 'BKASH' %}#e2136e{% else %}#ec1f27{% endif %};">
+    {{ payment.get_method_display }}
+  </h2>
+  <p style="color:var(--muted);font-size:0.85rem;">DEMO PAYMENT PAGE — এটি প্রকৃত {{ payment.get_method_display }} নয়, শুধু চেকআউট ফ্লো test করার জন্য।</p>
+
+  <div class="card" style="background:#f8fbfc;">
+    <p>পরিশোধ করতে হবে</p>
+    <h1 style="margin:6px 0;">৳{{ payment.amount }}</h1>
+    <p style="font-size:0.8rem;color:var(--muted);">Order #{{ payment.order.order_uid|slice:":8" }} | Ref: {{ payment.transaction_id }}</p>
+  </div>
+
+  <form method="post" action="{% url 'payments:gateway_callback' payment.pk %}" style="margin-top:8px;">
+    {% csrf_token %}
+    <div class="field">
+      <label>{{ payment.get_method_display }} নম্বর (demo)</label>
+      <input type="text" placeholder="01XXXXXXXXX" value="01XXXXXXXXX" disabled>
+    </div>
+    <div class="field">
+      <label>PIN (demo)</label>
+      <input type="password" placeholder="••••" value="1234" disabled>
+    </div>
+    <button type="submit" name="outcome" value="success" class="btn btn-success" style="width:100%;margin-bottom:8px;">✅ Confirm &amp; Pay (Demo Success)</button>
+    <button type="submit" name="outcome" value="cancel" class="btn btn-danger" style="width:100%;background:transparent;color:var(--danger);border:1px solid var(--danger);">❌ Cancel Payment</button>
+  </form>
+</div>
+{% endblock %}

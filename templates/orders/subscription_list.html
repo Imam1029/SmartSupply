@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}আমার Subscription{% endblock %}
+{% block content %}
+<div class="action-row" style="justify-content:space-between;align-items:center;">
+  <h1 style="margin:0;">🔁 আমার Subscription (Auto-Refill)</h1>
+  <a href="{% url 'orders:subscription_create' %}" class="btn">নতুন Subscription</a>
+</div>
+
+{% for sub in subscriptions %}
+  <div class="card">
+    <p style="margin:0;">
+      <strong>{{ sub.product.name }}</strong>
+      {% if sub.is_active %}<span class="status-pill">চালু</span>{% else %}<span class="status-pill pending">বন্ধ (Paused)</span>{% endif %}
+    </p>
+    <p style="color:var(--muted);margin:6px 0;">
+      প্রতি {% if sub.interval == 'CUSTOM' %}{{ sub.custom_days }} দিনে{% else %}{{ sub.get_interval_display }}{% endif %}
+      &nbsp;|&nbsp; ঠিকানা: {{ sub.address.label }}
+      {% if sub.next_run_date %}&nbsp;|&nbsp; পরবর্তী: {{ sub.next_run_date }}{% endif %}
+    </p>
+    <div class="action-row">
+      <form method="post" action="{% url 'orders:subscription_toggle' sub.pk %}" style="display:inline;">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-sm btn-outline">{% if sub.is_active %}⏸ Pause করুন{% else %}▶ চালু করুন{% endif %}</button>
+      </form>
+      {% if sub.is_active %}
+        <form method="post" action="{% url 'orders:subscription_skip' sub.pk %}" style="display:inline;">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-sm btn-outline">⏭ পরের ডেলিভারি স্কিপ করুন</button>
+        </form>
+      {% endif %}
+      <form method="post" action="{% url 'orders:subscription_delete' sub.pk %}" style="display:inline;" data-confirm="এই Subscription মুছে ফেলবেন?">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-sm btn-danger">🗑 মুছুন</button>
+      </form>
+    </div>
+  </div>
+{% empty %}
+  <div class="card">
+    <p>এখনো কোনো Subscription নেই। নিয়মিত পানি লাগলে Subscription চালু করুন, প্রতিবার আলাদা করে অর্ডার করতে হবে না।</p>
+    <a href="{% url 'orders:subscription_create' %}" class="btn">Subscription তৈরি করুন</a>
+  </div>
+{% endfor %}
+{% endblock %}

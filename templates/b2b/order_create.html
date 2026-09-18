@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Corporate Bulk Order{% endblock %}
+{% block content %}
+<div class="card" style="max-width:480px;margin:0 auto;">
+  <h1>Bulk Order — {{ client.company_name }}</h1>
+  <p>Available Credit: ৳{{ client.available_credit }}</p>
+  <form method="post">
+    {% csrf_token %}
+    {% for field in form %}
+      <div class="field">
+        <label>{{ field.label }}</label>
+        {{ field }}
+        {% if field.help_text %}<small style="color:var(--muted);">{{ field.help_text }}</small>{% endif %}
+        {% for error in field.errors %}<div class="alert alert-error">{{ error }}</div>{% endfor %}
+      </div>
+    {% endfor %}
+    <button type="submit" class="btn">Postpaid অর্ডার নিশ্চিত করুন</button>
+  </form>
+</div>
+{% endblock %}

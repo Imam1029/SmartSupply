@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}নতুন Subscription{% endblock %}
+{% block content %}
+<div class="card" style="max-width:480px;margin:0 auto;">
+  <h1>নতুন Subscription</h1>
+  <p style="color:var(--muted);font-size:0.9rem;">নিয়মিত interval-এ reminder পাবেন, চাইলে pause/skip/বাতিল যেকোনো সময় করতে পারবেন।</p>
+  <form method="post">
+    {% csrf_token %}
+    {% for field in form %}
+      <div class="field">
+        <label>{{ field.label }}</label>
+        {{ field }}
+        {% if field.help_text %}<small style="color:var(--muted);">{{ field.help_text }}</small>{% endif %}
+        {% for error in field.errors %}<div class="alert alert-error">{{ error }}</div>{% endfor %}
+      </div>
+    {% endfor %}
+    <button type="submit" class="btn">Subscription তৈরি করুন</button>
+  </form>
+</div>
+{% endblock %}

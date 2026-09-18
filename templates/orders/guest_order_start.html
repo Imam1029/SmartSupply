@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Guest Order{% endblock %}
+{% block content %}
+<div class="card" style="max-width:480px;margin:0 auto;">
+  <h1>একাউন্ট ছাড়াই অর্ডার করুন</h1>
+  <form method="post">
+    {% csrf_token %}
+    {% for field in form %}
+      <div class="field">
+        <label>{{ field.label }}</label>
+        {{ field }}
+        {% if field.help_text %}<small style="color:var(--muted);">{{ field.help_text }}</small>{% endif %}
+        {% for error in field.errors %}<div class="alert alert-error">{{ error }}</div>{% endfor %}
+      </div>
+    {% endfor %}
+
+    <div class="card" id="price-preview" style="background:#f0fdf4;border-color:#bbf7d0;">
+      <h3 style="margin-top:0;">💧 মূল্য বিবরণ</h3>
+      <p style="font-weight:600;">🆕 নতুন গ্রাহক হিসেবে বোতল + পানি দুটোর দামই একসাথে লাগবে (বোতলের মালিকানা আপনার হয়ে যাবে)। পরের বার শুধু পানির দাম।</p>
+      <table style="margin-bottom:0;">
+        <tr><td>পানির দাম</td><td id="price-water" style="text-align:right;"></td></tr>
+        <tr><td>বোতলের দাম (একবারই)</td><td id="price-bottle" style="text-align:right;"></td></tr>
+        <tr><td><strong>মোট (আনুমানিক)</strong></td><td id="price-total" style="text-align:right;"><strong></strong></td></tr>
+      </table>
+    </div>
+
+    <button type="submit" class="btn">OTP পাঠান</button>
+  </form>
+  <p style="margin-top:14px;">আগে থেকেই অ্যাকাউন্ট আছে? <a href="{% url 'accounts:login' %}">লগইন করুন</a></p>
+</div>
+
+<script id="product-pricing-data" type="application/json">{{ product_pricing_json|safe }}</script>
+<script>
+(function () {
+  const pricing = JSON.parse(document.getElementById("product-pricing-data").textContent || "{}");
+  const productSelect = document.getElementById("id_product");
+  const qtyInput = document.getElementById("id_quantity");
+  const waterEl = document.getElementById("price-water");
+  const bottleEl = document.getElementById("price-bottle");
+  const totalEl = document.getElementById("price-total").querySelector("strong");
+
+  function fmt(n) { return "৳" + n.toLocaleString("en-BD", { maximumFractionDigits: 2 }); }
+
+  function update() {
+    if (!productSelect || !productSelect.value) return;
+    const info = pricing[productSelect.value];
+    if (!info) return;
+    const qty = Math.max(parseInt(qtyInput.value || "1", 10), 1);
+    const water = info.water_price * qty;
+    const bottle = info.bottle_price * qty;
+    waterEl.textContent = fmt(water);
+    bottleEl.textContent = fmt(bottle);
+    totalEl.textContent = fmt(water + bottle);
+  }
+
+  if (productSelect) {
+    productSelect.addEventListener("change", update);
+    qtyInput.addEventListener("input", update);
+    update();
+  }
+})();
+</script>
+{% endblock %}
+

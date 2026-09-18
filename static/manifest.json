@@ -1,0 +1,19 @@
+{
+  "name": "Smart Water Supply, Delivery & Reusable Bottle Tracking Platform",
+  "short_name": "Smart Water",
+  "description": "পানি অর্ডার, ডেলিভারি ট্র্যাকিং এবং reusable bottle exchange -- এক জায়গায়।",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f4f9fb",
+  "theme_color": "#0e7490",
+  "lang": "bn",
+  "icons": [
+    {
+      "src": "/static/img/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}আমার কার্ট{% endblock %}
+{% block content %}
+<h1>🛒 আমার কার্ট</h1>
+
+{% if lines %}
+<div class="table-scroll">
+  <table>
+    <tr><th>পণ্য</th><th>পরিমাণ</th><th>আনুমানিক দাম*</th><th></th></tr>
+    {% for line in lines %}
+      <tr>
+        <td>{{ line.product.name }}</td>
+        <td>
+          <form method="post" action="{% url 'orders:cart_update' line.product.pk %}" style="display:flex;gap:6px;align-items:center;">
+            {% csrf_token %}
+            <input type="number" name="quantity" value="{{ line.quantity }}" min="1" style="width:70px;">
+            <button type="submit" class="btn btn-sm btn-outline">আপডেট</button>
+          </form>
+        </td>
+        <td class="mono">৳{{ line.water_subtotal|add:line.bottle_subtotal }}</td>
+        <td>
+          <form method="post" action="{% url 'orders:cart_remove' line.product.pk %}" data-confirm="কার্ট থেকে সরাতে চান?">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-sm btn-danger">সরান</button>
+          </form>
+        </td>
+      </tr>
+    {% endfor %}
+  </table>
+</div>
+<p style="color:var(--muted);">*আসল মূল্য checkout-এ চূড়ান্ত হবে -- আপনার কাছে ইতিমধ্যে কোনো পণ্যের বোতল থাকলে সেটার জন্য শুধু পানির দাম লাগবে (Refill), তখন এই আনুমানিক দাম কমে যাবে।</p>
+<h3>আনুমানিক মোট: ৳{{ grand_total_estimate }}</h3>
+<a href="{% url 'orders:order_create' %}" class="btn">✅ Checkout করুন</a>
+<a href="{% url 'catalog:product_list' %}" class="btn btn-outline">আরও পণ্য দেখুন</a>
+{% else %}
+  <div class="card">
+    <p>আপনার কার্ট খালি।</p>
+    <a href="{% url 'catalog:product_list' %}" class="btn">পণ্য দেখুন</a>
+  </div>
+{% endif %}
+{% endblock %}

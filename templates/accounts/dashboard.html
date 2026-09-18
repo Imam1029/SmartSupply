@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}আমার প্যানেল{% endblock %}
+{% block content %}
+<h1>স্বাগতম, {{ request.user.first_name|default:request.user.phone }}</h1>
+
+<div class="action-row">
+  <a href="{% url 'orders:order_create' %}" class="btn">নতুন অর্ডার</a>
+  {% if orders %}
+    <form method="post" action="{% url 'orders:order_reorder' orders.0.pk %}" style="display:inline;" data-confirm="আপনার সর্বশেষ অর্ডারের মতো আবার অর্ডার করতে চান?">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-outline">🔁 সর্বশেষ অর্ডার আবার করুন</button>
+    </form>
+  {% endif %}
+  <a href="{% url 'accounts:addresses' %}" class="btn btn-outline">ঠিকানা ব্যবস্থাপনা</a>
+</div>
+
+<h2 style="margin-top:30px;">আমার বোতল</h2>
+<div class="card">
+  {% if held_bottles %}
+  <div class="table-scroll">
+    <table>
+      <tr><th>Product</th><th>সংখ্যা</th></tr>
+      {% for h in held_bottles %}
+        <tr><td>{{ h.product.name }}</td><td>{{ h.quantity }}</td></tr>
+      {% endfor %}
+    </table>
+  </div>
+  {% else %}
+    <p>এখনো কোনো বোতল আপনার কাছে নেই।</p>
+  {% endif %}
+</div>
+
+<h2 style="margin-top:30px;">সাম্প্রতিক অর্ডার</h2>
+<div class="card">
+  {% if orders %}
+  <div class="table-scroll">
+    <table>
+      <tr><th>Order</th><th>ধরন</th><th>Status</th><th>মোট</th><th></th></tr>
+      {% for o in orders %}
+        <tr>
+          <td>{{ o.order_uid|slice:":8" }}</td>
+          <td>{{ o.get_order_type_display }}</td>
+          <td><span class="status-pill {% if o.status == 'FAILED' %}failed{% elif o.status == 'CREATED' %}pending{% endif %}">{{ o.get_status_display }}</span></td>
+          <td>৳{{ o.total_amount }}</td>
+          <td>
+            <a href="{% url 'orders:order_detail' o.pk %}">দেখুন</a>
+            {% if o.status != 'CANCELLED' %}
+              &nbsp;|&nbsp;
+              <form method="post" action="{% url 'orders:order_reorder' o.pk %}" style="display:inline;" data-confirm="এই একই অর্ডার আবার দিতে চান?">
+                {% csrf_token %}
+                <button type="submit" style="background:none;border:none;color:var(--primary);text-decoration:underline;cursor:pointer;padding:0;font-size:inherit;">🔁</button>
+              </form>
+            {% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+    </table>
+  </div>
+  {% else %}
+    <div style="text-align:center;padding:20px 0;">
+      <p style="color:var(--muted);margin-bottom:14px;">এখনো কোনো অর্ডার নেই — প্রথম অর্ডারটি করে ফেলুন!</p>
+      <a href="{% url 'orders:order_create' %}" class="btn">এখনই অর্ডার করুন</a>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

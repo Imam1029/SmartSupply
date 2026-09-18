@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Cash Handover{% endblock %}
+{% block content %}
+<div class="card" style="max-width:420px;margin:0 auto;">
+  <h1>Cash Handover — {{ handover.handover_date }}</h1>
+  <p>আজকে COD থেকে সংগৃহীত মোট (Expected): <strong>৳{{ handover.expected_amount }}</strong></p>
+  <form method="post">
+    {% csrf_token %}
+    <div class="field">
+      <label>আপনি যে পরিমাণ জমা দিচ্ছেন</label>
+      <input type="number" step="0.01" name="submitted_amount" value="{{ handover.expected_amount }}">
+    </div>
+    <button type="submit" class="btn">জমা দিন</button>
+  </form>
+</div>
+{% endblock %}

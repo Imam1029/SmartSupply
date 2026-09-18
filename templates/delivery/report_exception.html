@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Exception Report{% endblock %}
+{% block content %}
+<div class="card" style="max-width:480px;margin:0 auto;">
+  <h1>Delivery Exception রিপোর্ট</h1>
+  <p>Order #{{ order.order_uid|slice:":8" }}</p>
+  <form method="post">
+    {% csrf_token %}
+    {% for field in form %}
+      <div class="field">
+        <label>{{ field.label }}</label>
+        {{ field }}
+      </div>
+    {% endfor %}
+    <button type="submit" class="btn btn-danger">রিপোর্ট জমা দিন</button>
+  </form>
+</div>
+{% endblock %}
