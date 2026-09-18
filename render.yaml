@@ -31,3 +31,14 @@ services:
           property: connectionString
       - key: PYTHON_VERSION
         value: "3.12.6"
+      # Auto-creates the first admin login on deploy (see
+      # core/management/commands/create_admin.py) -- needed since the free
+      # plan has no Shell to run createsuperuser by hand. Find the
+      # generated password in Render dashboard -> this service ->
+      # Environment -> DJANGO_SUPERUSER_PASSWORD (click to reveal).
+      - key: DJANGO_SUPERUSER_USERNAME
+        value: admin
+      - key: DJANGO_SUPERUSER_PHONE
+        value: "01700000000"  # change to your real number after first login
+      - key: DJANGO_SUPERUSER_PASSWORD
+        generateValue: true
